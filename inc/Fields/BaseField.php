@@ -1,22 +1,14 @@
 <?php
 
-namespace Woption;
+namespace Woption\Fields;
 
 /**
  * Class Field is used to hold information regarding single field item in the form.
  *
  * @author Alexander Teshabaev <sasha.tesh@gmail.com>
- * @package AnyComment\Admin
+ * @package Woption
  */
-class Field {
-
-	const TYPE_TEXTAREA = 'textarea';
-	const TYPE_SELECT = 'select';
-	const TYPE_CHECKBOX = 'checkbox';
-	const TYPE_TEXT = 'text';
-	const TYPE_NUMBER = 'number';
-	const TYPE_COLOR = 'color';
-
+abstract class BaseField {
 	/**
 	 * @var string Field id.
 	 */
@@ -36,11 +28,6 @@ class Field {
 	 * @var string|null For attribute type pointing to the form field itself.
 	 */
 	protected $label_for;
-
-	/**
-	 * @var string Field type.
-	 */
-	protected $type;
 
 	/**
 	 * @var string|null Description displayed below the field.
@@ -68,6 +55,11 @@ class Field {
 	protected $args = [];
 
 	/**
+	 * @var array List of field attributes.
+	 */
+	protected $field_attributes = [];
+
+	/**
 	 * @var array List of on events.
 	 */
 	protected $client_events = [];
@@ -92,20 +84,27 @@ class Field {
 	 *
 	 * @param array $options Associative list of options to set object properties.
 	 */
-	public function __construct( array $options = [] ) {
+	public function __construct ( array $options = [] ) {
 		if ( ! empty( $options ) ) {
 			foreach ( $options as $key => $value ) {
-				if ( property_exists( $this, $key ) ) {
-					$this->$key = $value;
-				}
+				$this->$key = $value;
 			}
 		}
+
+		$this->init();
+	}
+
+	/**
+	 * Invoked after constructor.
+	 */
+	public function init () {
+
 	}
 
 	/**
 	 * @return string
 	 */
-	public function get_id() {
+	public function get_id () {
 		return $this->id;
 	}
 
@@ -114,7 +113,7 @@ class Field {
 	 *
 	 * @return $this
 	 */
-	public function set_id( $id ) {
+	public function set_id ( $id ) {
 		$this->id = $id;
 
 		return $this;
@@ -123,7 +122,7 @@ class Field {
 	/**
 	 * @return string
 	 */
-	public function get_title() {
+	public function get_title () {
 		return $this->title;
 	}
 
@@ -132,7 +131,7 @@ class Field {
 	 *
 	 * @return $this
 	 */
-	public function set_title( $title ) {
+	public function set_title ( $title ) {
 		$this->title = $title;
 
 		return $this;
@@ -145,7 +144,7 @@ class Field {
 	 *
 	 * @return $this
 	 */
-	public function set_label( $label ) {
+	public function set_label ( $label ) {
 		$this->label = $label;
 
 		return $this;
@@ -156,14 +155,14 @@ class Field {
 	 *
 	 * @return string
 	 */
-	public function get_label() {
+	public function get_label () {
 		return $this->label;
 	}
 
 	/**
 	 * @return string
 	 */
-	public function get_label_for() {
+	public function get_label_for () {
 
 		$label_for = $this->label_for;
 
@@ -179,26 +178,8 @@ class Field {
 	 *
 	 * @return $this
 	 */
-	public function set_label_for( $label_for ) {
+	public function set_label_for ( $label_for ) {
 		$this->label_for = $label_for;
-
-		return $this;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function get_type() {
-		return $this->type;
-	}
-
-	/**
-	 * @param string $type
-	 *
-	 * @return $this
-	 */
-	public function set_type( $type ) {
-		$this->type = $type;
 
 		return $this;
 	}
@@ -206,7 +187,7 @@ class Field {
 	/**
 	 * @return null|string
 	 */
-	public function get_description() {
+	public function get_description () {
 		return $this->description;
 	}
 
@@ -215,7 +196,7 @@ class Field {
 	 *
 	 * @return $this
 	 */
-	public function set_description( $description ) {
+	public function set_description ( $description ) {
 		$this->description = $description;
 
 		return $this;
@@ -224,7 +205,7 @@ class Field {
 	/**
 	 * @return null|callable|string
 	 */
-	public function get_before() {
+	public function get_before () {
 		return $this->before;
 	}
 
@@ -233,16 +214,44 @@ class Field {
 	 *
 	 * @return $this
 	 */
-	public function set_before( $before ) {
+	public function set_before ( $before ) {
 		$this->before = $before;
 
 		return $this;
 	}
 
 	/**
+	 * @return array
+	 */
+	public function get_field_attributes () {
+		return $this->field_attributes;
+	}
+
+	/**
+	 * @param array $field_attributes
+	 *
+	 * @return $this
+	 */
+	public function set_field_attributes ( $field_attributes ) {
+		$this->field_attributes = $field_attributes;
+
+		return $this;
+	}
+
+	/**
+	 * Add new field attribute.
+	 *
+	 * @param string $key Attribute key.
+	 * @param string $value Attribute value.
+	 */
+	public function add_field_attribute ( $key, $value ) {
+		$this->field_attributes[ $key ] = $value;
+	}
+
+	/**
 	 * @return callable|string
 	 */
-	public function get_after() {
+	public function get_after () {
 		return $this->after;
 	}
 
@@ -251,7 +260,7 @@ class Field {
 	 *
 	 * @return $this
 	 */
-	public function set_after( $after ) {
+	public function set_after ( $after ) {
 
 		if ( is_callable( $after ) ) {
 			$this->after = call_user_func( $after );
@@ -266,7 +275,7 @@ class Field {
 	/**
 	 * @return null|string
 	 */
-	public function get_hint() {
+	public function get_hint () {
 		return $this->hint;
 	}
 
@@ -275,7 +284,7 @@ class Field {
 	 *
 	 * @return $this
 	 */
-	public function set_hint( $hint ) {
+	public function set_hint ( $hint ) {
 		$this->hint = $hint;
 
 		return $this;
@@ -284,7 +293,7 @@ class Field {
 	/**
 	 * @return array
 	 */
-	public function get_args() {
+	public function get_args () {
 		return $this->args;
 	}
 
@@ -293,72 +302,8 @@ class Field {
 	 *
 	 * @return $this
 	 */
-	public function set_args( $args ) {
+	public function set_args ( $args ) {
 		$this->args = $args;
-
-		return $this;
-	}
-
-	/**
-	 * Set text type.
-	 *
-	 * @return $this
-	 */
-	public function text() {
-		$this->set_type( self::TYPE_TEXT );
-
-		return $this;
-	}
-
-	/**
-	 * Set number type.
-	 *
-	 * @return $this
-	 */
-	public function number() {
-		$this->set_type( self::TYPE_NUMBER );
-
-		return $this;
-	}
-
-	/**
-	 * Set color type.
-	 *
-	 * @return $this
-	 */
-	public function color() {
-		$this->set_type( self::TYPE_COLOR );
-
-		return $this;
-	}
-
-	/**
-	 * Set checkbox type.
-	 *
-	 * @return $this
-	 */
-	public function checkbox() {
-		$this->set_type( self::TYPE_CHECKBOX );
-
-		return $this;
-	}
-
-	/**
-	 * Set select type.
-	 * @return $this
-	 */
-	public function select() {
-		$this->set_type( self::TYPE_SELECT );
-
-		return $this;
-	}
-
-	/**
-	 * Set textarea type.
-	 * @return $this
-	 */
-	public function textarea() {
-		$this->set_type( self::TYPE_TEXTAREA );
 
 		return $this;
 	}
@@ -368,7 +313,7 @@ class Field {
 	 *
 	 * @return null|string
 	 */
-	public function get_value() {
+	public function get_value () {
 		$options = get_option( $this->option_name, null );
 
 		if ( null === $options ) {
@@ -397,112 +342,6 @@ class Field {
 
 
 	/**
-	 * Helper to render select.
-	 *
-	 * @return string
-	 */
-	public function input_select() {
-		$for            = $this->get_label_for();
-		$name           = $this->get_id();
-		$args           = $this->get_args();
-		$selected_value = $this->get_value();
-		$options        = isset( $args['options'] ) ? $args['options'] : null;
-
-		if ( $options === null ) {
-			return '';
-		}
-
-		$options_html = '';
-		foreach ( $options as $key => $value ) {
-			$selected     = $value !== null ? ( selected( $selected_value, $key, false ) ) : ( '' );
-			$options_html .= sprintf( '<option value="%s" %s>%s</option>', $key, $selected, $value );
-		}
-
-		return <<<EOL
-            <select name="$name"
-                    class="anycomment-select2"
-                    id="$for">$options_html</select>
-EOL;
-	}
-
-	/**
-	 * Helper to render checkbox.
-	 *
-	 * @return string
-	 */
-	public function input_checkbox() {
-		$label             = $this->get_label();
-		$for               = $this->get_label_for();
-		$name              = $this->get_id();
-		$description       = $this->get_description();
-		$value             = $this->get_value();
-		$checked_attribute = $value !== null ? 'checked="checked"' : '';
-
-		return <<<EOL
-<fieldset>
-	<legend class="screen-reader-text"><span>$label</span></legend>
-	<label for="$for"><input name="$name" type="checkbox" id="$for" $checked_attribute>
-	$label</label>
-	<p class="description">$description</p>
-</fieldset>
-EOL;
-	}
-
-	/**
-	 * Helper to render input color.
-	 *
-	 *
-	 * @return string
-	 */
-	public function input_color() {
-		$for   = $this->get_label_for();
-		$name  = $this->get_id();
-		$value = $this->get_value();
-
-		return <<<EOL
-            <input type="text" id="$for"
-                   name="$name"
-                   value="$value"
-                   class="anycomment-input-color"
-                   pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
-            >
-EOL;
-	}
-
-	/**
-	 * Helper to render input text.
-	 *
-	 * @param array $args List of passed arguments.
-	 *
-	 * @return string
-	 */
-	public function input_text() {
-		$type  = $this->get_type();
-		$for   = $this->get_label_for();
-		$name  = $this->get_id();
-		$value = $this->get_value();
-
-		return <<<EOT
-            <input type="$type" id="$for" name="$name" value="$value">
-EOT;
-	}
-
-	/**
-	 * Helper to render textarea.
-	 *
-	 * @return string
-	 */
-	public function input_textarea() {
-		$for   = $this->get_label_for();
-		$name  = $this->get_id();
-		$value = $this->get_value();
-
-		return <<<EOT
-            <textarea rows="5" id="$for" name="$name">$value</textarea>
-EOT;
-	}
-
-	/**
 	 * Places client event on current field.
 	 *
 	 * @param string $event Event function name, e.g. click, change, etc.
@@ -512,11 +351,11 @@ EOT;
 	 *
 	 * @return $this
 	 */
-	public function on( $event, $animation, $elements ) {
+	public function on ( $event, $animation, $elements ) {
 		$this->client_events[] = [
 			'event'     => $event,
 			'animation' => $animation,
-			'elements'  => $elements
+			'elements'  => $elements,
 		];
 
 		return $this;
@@ -527,7 +366,7 @@ EOT;
 	 *
 	 * @return string
 	 */
-	public function render_client_events() {
+	public function render_client_events () {
 		$events = $this->client_events;
 
 		if ( empty( $events ) ) {
@@ -578,10 +417,40 @@ JS;
 	}
 
 	/**
+	 * Override of magic method to convert class to string.
+	 *
 	 * @return string
 	 */
-	public function __toString() {
-		return $this->run();
+	public function __toString () {
+		return $this->render();
+	}
+
+	/**
+	 * Render field HTML.
+	 *
+	 * @return string
+	 */
+	abstract public function render_field ();
+
+	/**
+	 * Render field attributes.
+	 *
+	 * @return string
+	 */
+	public function render_field_attributes () {
+		$attr_html        = '';
+		$field_attributes = $this->field_attributes;
+
+
+		if ( empty( $field_attributes ) ) {
+			return $attr_html;
+		}
+
+		foreach ( $field_attributes as $attribute => $value ) {
+			$attr_html .= " $attribute=\"{$value}\" ";
+		}
+
+		return $attr_html;
 	}
 
 	/**
@@ -589,9 +458,8 @@ JS;
 	 *
 	 * @return string
 	 */
-	public function run() {
+	protected function render () {
 
-		$type        = $this->get_type();
 		$label_for   = $this->get_label_for();
 		$label_title = $this->get_title();
 		$description = $this->get_description();
@@ -601,33 +469,7 @@ JS;
 			'<p class="description">' . $description . '</p>' :
 			'';
 
-		$html       = '';
-		$field_html = '';
-
-		switch ( $type ) {
-			case 'text':
-			case 'number':
-			case 'numeric':
-				$field_html = $this->input_text();
-				break;
-			case 'toggle':
-			case 'checkbox':
-				$label      = $this->get_label();
-				$field_html = $this->input_checkbox();
-				break;
-			case 'dropdown':
-			case 'list':
-			case 'select':
-				$field_html = $this->input_select();
-				break;
-			case 'textarea':
-				$field_html = $this->input_textarea();
-				break;
-			case 'color':
-				$field_html = $this->input_color();
-				break;
-			default:
-		}
+		$html = '';
 
 		$html .= '<tr scope="row">';
 
@@ -638,7 +480,7 @@ JS;
 		$html .= '</th>';
 
 		$html .= '<td>';
-		$html .= $field_html;
+		$html .= $this->render_field();
 		$html .= $description;
 		$html .= '<td>';
 
@@ -649,7 +491,7 @@ JS;
 		$html .= '</tr>';
 
 		$attributes = [
-			'class' => $this->wrapper_class . ' ' . ( $this->wrapper_class . '-' . $this->get_id() )
+			'class' => $this->wrapper_class . ' ' . ( $this->wrapper_class . '-' . $this->get_id() ),
 		];
 
 		$rendered_attributes = '';

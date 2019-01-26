@@ -10,18 +10,29 @@ class WoptionLoader {
 	 * @var array Loader map.
 	 */
 	public static $classes = [
-		'inc/Field',
+		// Core
 		'inc/Option',
 		'inc/OptionManager',
-		'inc/Section'
+		'inc/Section',
+
+		// Base
+		'inc/Base/BaseHtml',
+
+		// Fields
+		'inc/Fields/BaseField',
+		'inc/Fields/Input',
+		'inc/Fields/Color',
+		'inc/Fields/Checkbox',
+		'inc/Fields/Select',
+		'inc/Fields/Textarea',
 	];
 
 	/**
-	 * Loader.
+	 * Require all classes.
 	 */
-	public static function load() {
+	public static function load () {
 		foreach ( static::$classes as $class ) {
-			require_once __DIR__ . '/' . $class . '.php';
+			require_once __DIR__ . DIRECTORY_SEPARATOR . $class . '.php';
 		}
 	}
 }

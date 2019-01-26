@@ -2,7 +2,12 @@
 
 namespace Woption;
 
-
+/**
+ * Class OptionManager is a core class to manage options.
+ *
+ * @author Alexander Teshabaev <sasha.tesh@gmail.com>
+ * @package Woption
+ */
 class OptionManager {
 	/**
 	 * @var string Options group.
@@ -22,17 +27,32 @@ class OptionManager {
 	/**
 	 * @var string Page header.
 	 */
-	protected $page_header;
+	protected $page_title;
+
+	/**
+	 * @var string Menu title
+	 */
+	protected $menu_title;
+
+	/**
+	 * @var string Menu icon.
+	 */
+	protected $menu_icon;
+
+	/**
+	 * @var int Menu position.
+	 */
+	protected $menu_position;
+
+	/**
+	 * @var string User capability to see page.
+	 */
+	protected $capability = 'manage_options';
 
 	/**
 	 * @var array Default options. When options specified in this list do not exist in the form options, default ones will be used instead.
 	 */
 	protected $default_options;
-
-	/**
-	 * @var OptionManager Instance of current object.
-	 */
-	private static $_instances;
 
 	/**
 	 * @var Option|null
@@ -57,24 +77,62 @@ class OptionManager {
 	protected $field_options = [];
 
 	/**
+	 * @var OptionManager Instance of current object.
+	 */
+	private static $_instances;
+
+	/**
 	 * AC_Options constructor.
 	 */
-	public function __construct() {
+	public function __construct () {
 		add_action( 'init', [ $this, 'init' ] );
 	}
 
 	/**
 	 * Init class.
 	 */
-	public function init() {
-		register_setting( $this->option_group, $this->option_name );
+	public function init () {
 
+		add_action( 'admin_menu', [ $this, 'init_menu' ] );
+
+		$this->init_rest_api();
+	}
+
+	/**
+	 * Register sidebar menu.
+	 *
+	 * Notice: it would not be registered in case of missing page or menu title.
+	 *
+	 * @return bool
+	 */
+	public function init_menu () {
+		if ( empty( $this->page_title ) || empty( $this->menu_title ) ) {
+			return false;
+		}
+
+		add_menu_page(
+			$this->page_title,
+			$this->menu_title,
+			$this->capability,
+			$this->page_slug,
+			[ $this, 'render' ],
+			$this->menu_icon,
+			$this->menu_position
+		);
+
+		return true;
+	}
+
+	/**
+	 * Initiate and register WP REST API and AJAX-related scripts.
+	 */
+	public function init_rest_api () {
 		$action_name = $this->get_page_slug();
 
 		add_action( 'rest_api_init', function () use ( $action_name ) {
 			register_rest_route( 'anycomment/v1', "/$action_name/", array(
 				'methods'  => 'POST',
-				'callback' => [ $this, 'process_rest' ]
+				'callback' => [ $this, 'process_rest' ],
 			) );
 		} );
 
@@ -104,9 +162,7 @@ jQuery('$form_id').on('submit', function(e) {
 	    error: function(err) {
 	        console.log(err);
 	    }
-	})
-	
-	console.log();
+	});
 });
 JS;
 			echo '<script>' . $js . '</script>';
@@ -120,7 +176,7 @@ JS;
 	 *
 	 * @return mixed|\WP_Error|\WP_REST_Response
 	 */
-	public function process_rest( $request ) {
+	public function process_rest ( $request ) {
 
 		$response = new \WP_REST_Response();
 
@@ -136,7 +192,7 @@ JS;
 		$this->update_db_option( $options, $option_name );
 
 		$response->set_data( [
-			'success' => true
+			'success' => true,
 		] );
 
 		return rest_ensure_response( $response );
@@ -149,18 +205,18 @@ JS;
 	 *
 	 * @return void
 	 */
-	public function add_option( $options ) {
+	public function add_option ( $options ) {
 		$this->options[] = $options;
 	}
 
 	/**
 	 * @return Option
 	 */
-	public function form() {
+	public function form () {
 		$this->fielder = new Option( [
 			'page_slug'    => $this->page_slug,
 			'option_name'  => $this->option_name,
-			'option_group' => $this->option_group
+			'option_group' => $this->option_group,
 		] );
 
 		$this->add_option( $this->fielder );
@@ -173,73 +229,59 @@ JS;
 	 *
 	 * @return Section
 	 */
-	public function section_builder() {
+	public function section_builder () {
 		return new Section( $this->section_options );
 	}
 
 	/**
-	 * Start building new field.
-	 *
-	 * @return Field
+	 * Renders and echoes options page.
 	 */
-	public function field_builder() {
-
-		/**
-		 * Set page slug for field when not defined on the class level.
-		 */
-		$options = $this->field_options;
-		if ( ! isset( $options['option_name'] ) ) {
-			$options['option_name'] = $this->option_name;
-		}
-
-		return new Field( $options );
-	}
-
-	public function run() {
+	public function render () {
 		$html = '';
 
 		$options = $this->options;
 
 		$html .= '<div class="wrap">';
 
-		if ( ! empty( $this->page_header ) ) {
-			$html .= '<h1>' . $this->page_header . '</h1>';
+		if ( ! empty( $this->page_title ) ) {
+			$html .= '<h1>' . $this->page_title . '</h1>';
 		}
 
-		$html .= '<table class="form-table">';
-
-		$html .= '<tbody>';
-
-		$html .= '<form action="" id="' . $this->get_page_slug() . '" method="post" class="anycomment-form" novalidate>';
-
-		$html .= '<input type="hidden" name="option_name" value="' . $this->option_name . '">';
-
+		$form_content = '';
 		foreach ( $options as $option ) {
 			$sections = $option->get_sections();
 
 			if ( ! empty( $sections ) ) {
 				foreach ( $sections as $section ) {
-					$html .= $section;
+					$form_content .= $section;
 				}
 			} else {
 				$fields = $option->get_fields();
 				foreach ( $fields as $field ) {
-					$html .= $field;
+					$form_content .= $field;
 				}
 			}
 		}
 
-		$html .= '<input type="submit" value="' . __( 'Save', 'anycomment' ) . '">';
+		$save = 'Save';
 
-		$html .= '</form>';
-
-		$html .= '</tbody>';
-
-		$html .= '</table>';
+		$html .= <<<EOL
+<form action="" id="{$this->get_page_slug()}" method="post" novalidate>
+	<input type="hidden" name="option_name" value="{$this->option_name}">
+			
+	<table class="form-table">
+		<tbody>$form_content</tbody>
+	</table>
+	
+	<p class="submit">
+		<input type="submit" name="submit" id="submit" class="button button-primary" value="$save">
+	</p>
+</form>	
+EOL;
 
 		$html .= '</div>';
 
-		return $html;
+		echo $html;
 	}
 
 	/**
@@ -247,70 +289,8 @@ JS;
 	 *
 	 * @return mixed
 	 */
-	public function get_page_slug() {
+	public function get_page_slug () {
 		return str_replace( '-', '_', $this->page_slug );
-	}
-
-	/**
-	 * Display tabbed menu.
-	 *
-	 * @param string $page
-	 */
-	protected function do_tab_menu() {
-		global $wp_settings_sections, $wp_settings_fields;
-
-		if ( ! isset( $wp_settings_sections[ $page ] ) ) {
-			return;
-		}
-
-		echo '<ul>';
-
-		$i = 0;
-		foreach ( (array) $wp_settings_sections[ $page ] as $section ) {
-			$activeClass = $i === 0 ? 'class="current"' : '';
-			echo '<li ' . $activeClass . ' data-tab="' . $section['id'] . '">
-				<a href="#tab-' . $section['id'] . '">' . $section['title'] . '</a>
-				</li>';
-			$i ++;
-		}
-		echo '</ul>';
-
-		?>
-        <script>
-            var $ = jQuery;
-            $('.anycomment-tabs__menu li').on('click', function (e) {
-                e.preventDefault();
-                doTab($(this));
-                return false;
-            });
-
-
-            function doTab(el) {
-                var $ = jQuery,
-                    data = (el.attr('data-tab') || ''),
-                    tab_id = (data.indexOf('#tab-') === -1 ? ('#tab-' + data) : data);
-
-                if (!data) {
-                    return false;
-                }
-
-                $('.anycomment-tabs__menu li').removeClass('current');
-                $('.anycomment-tabs__container__tab').removeClass('current');
-
-                el.addClass('current');
-                $(tab_id).addClass('current');
-            }
-
-            $(document).ready(function () {
-                var hash = window.location.hash.trim();
-                if (hash !== '') {
-                    var cleanedHash = hash.replace('#tab-', '');
-                    console.log(cleanedHash);
-                    doTab($('[data-tab="' + cleanedHash + '"]'));
-                }
-            });
-        </script>
-		<?php
 	}
 
 	/**
@@ -318,7 +298,7 @@ JS;
 	 *
 	 * @return bool
 	 */
-	public function has_options() {
+	public function has_options () {
 		$options = $this->get_db_options();
 
 		if ( $options === null ) {
@@ -340,7 +320,7 @@ JS;
 	 *
 	 * @return Option[]|null
 	 */
-	public function get_options() {
+	public function get_options () {
 		return $this->options;
 	}
 
@@ -351,7 +331,7 @@ JS;
 	 *
 	 * @return mixed|null
 	 */
-	public function get_db_option( $name ) {
+	public function get_db_option ( $name ) {
 		$options = $this->get_db_options();
 
 		$optionValue = isset( $options[ $name ] ) ? trim( $options[ $name ] ) : null;
@@ -364,7 +344,7 @@ JS;
 	 *
 	 * @return Option[]|null
 	 */
-	public function get_db_options() {
+	public function get_db_options () {
 
 		$option = get_option( $this->option_name, null );
 
@@ -383,7 +363,7 @@ JS;
 	 * @param mixed $value Value of the option.
 	 * @param null|string $option_name Option name. When not specified current option_name will be used.
 	 */
-	public function update_db_option( $value, $option_name = null ) {
+	public function update_db_option ( $value, $option_name = null ) {
 
 		$option = null;
 
@@ -401,7 +381,7 @@ JS;
 	 *
 	 * @return self
 	 */
-	public static function instance() {
+	public static function instance () {
 		$className = get_called_class();
 
 		if ( ! isset( self::$_instances[ $className ] ) ) {

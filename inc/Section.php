@@ -2,11 +2,13 @@
 
 namespace Woption;
 
+use Woption\Fields\BaseField;
+
 /**
  * Class AnyCommentSection is used to build section.
  *
  * @author Alexander Teshabaev <sasha.tesh@gmail.com>
- * @package AnyComment\Options
+ * @package Woption
  */
 class Section {
 	/**
@@ -40,7 +42,7 @@ class Section {
 	public $wrapper = '<div id="{id}" class="woption-section">{content}</div>';
 
 	/**
-	 * @var null|Field[]
+	 * @var null|BaseField[]
 	 */
 	public $fields = null;
 
@@ -49,7 +51,7 @@ class Section {
 	 *
 	 * @param array $options Associative list of options to set object properties.
 	 */
-	public function __construct( array $options = [] ) {
+	public function __construct ( array $options = [] ) {
 		if ( ! empty( $options ) ) {
 			foreach ( $options as $key => $value ) {
 				if ( property_exists( $this, $key ) ) {
@@ -62,7 +64,7 @@ class Section {
 	/**
 	 * @return string
 	 */
-	public function get_id() {
+	public function get_id () {
 		return $this->id;
 	}
 
@@ -71,7 +73,7 @@ class Section {
 	 *
 	 * @return $this
 	 */
-	public function set_id( $id ) {
+	public function set_id ( $id ) {
 		$this->id = $id;
 
 		return $this;
@@ -80,7 +82,7 @@ class Section {
 	/**
 	 * @return string
 	 */
-	public function get_title() {
+	public function get_title () {
 		return $this->title;
 	}
 
@@ -89,7 +91,7 @@ class Section {
 	 *
 	 * @return $this
 	 */
-	public function set_title( $title ) {
+	public function set_title ( $title ) {
 		$this->title = $title;
 
 		return $this;
@@ -98,7 +100,7 @@ class Section {
 	/**
 	 * @return string
 	 */
-	public function get_description() {
+	public function get_description () {
 		return $this->description;
 	}
 
@@ -107,7 +109,7 @@ class Section {
 	 *
 	 * @return $this
 	 */
-	public function set_description( $description ) {
+	public function set_description ( $description ) {
 
 		if ( is_callable( $description ) ) {
 			$description = call_user_func( $description );
@@ -121,7 +123,7 @@ class Section {
 	/**
 	 * @return callable|string
 	 */
-	public function get_callback() {
+	public function get_callback () {
 		return $this->callback;
 	}
 
@@ -130,7 +132,7 @@ class Section {
 	 *
 	 * @return  $this
 	 */
-	public function set_callback( $callback ) {
+	public function set_callback ( $callback ) {
 
 		if ( is_callable( $callback ) ) {
 			$this->callback .= call_user_func( $callback );
@@ -142,18 +144,18 @@ class Section {
 	}
 
 	/**
-	 * @return Field[]|null
+	 * @return BaseField[]|null
 	 */
-	public function get_fields() {
+	public function get_fields () {
 		return $this->fields;
 	}
 
 	/**
-	 * @param Field[]|null $fields
+	 * @param BaseField[]|null $fields
 	 *
 	 * @return $this
 	 */
-	public function set_fields( $fields ) {
+	public function set_fields ( $fields ) {
 		$this->fields = $fields;
 
 		return $this;
@@ -162,7 +164,7 @@ class Section {
 	/**
 	 * @return string
 	 */
-	public function get_wrapper() {
+	public function get_wrapper () {
 		return $this->wrapper;
 	}
 
@@ -171,7 +173,7 @@ class Section {
 	 *
 	 * @return $this
 	 */
-	public function set_wrapper( $wrapper ) {
+	public function set_wrapper ( $wrapper ) {
 		$this->wrapper = $wrapper;
 
 		return $this;
@@ -180,15 +182,16 @@ class Section {
 	/**
 	 * @return bool
 	 */
-	public function is_visible() {
+	public function is_visible () {
 		return $this->visible;
 	}
 
 	/**
 	 * @param bool $visible
-	 * @param $this
+	 *
+	 * @return $this
 	 */
-	public function set_visible( $visible ) {
+	public function set_visible ( $visible ) {
 		$this->visible = $visible;
 
 		return $this;
@@ -200,7 +203,7 @@ class Section {
 	 *
 	 * @return string
 	 */
-	public function __toString() {
+	public function __toString () {
 		return $this->run();
 	}
 
@@ -209,7 +212,7 @@ class Section {
 	 *
 	 * @return string
 	 */
-	public function run() {
+	public function run () {
 
 		if ( ! $this->is_visible() ) {
 			return '';

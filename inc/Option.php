@@ -6,7 +6,7 @@ namespace Woption;
  * Class AnyCommentOption is used to hold information regarding single section.
  *
  * @author Alexander Teshabaev <sasha.tesh@gmail.com>
- * @package AnyComment\Options
+ * @package Woption
  */
 class Option {
 	/**
@@ -25,7 +25,7 @@ class Option {
 	protected $page_slug;
 
 	/**
-	 * @var Field[] List of fields.
+	 * @var BaseField[] List of fields.
 	 */
 	protected $fields = [];
 
@@ -70,7 +70,7 @@ class Option {
 	/**
 	 * Get list of fields.
 	 *
-	 * @return Field[]
+	 * @return BaseField[]
 	 */
 	public function get_fields() {
 		return $this->fields;
@@ -79,11 +79,11 @@ class Option {
 	/**
 	 * Set single field.
 	 *
-	 * @param Field $field Associative array data of single field.
+	 * @param BaseField $field Associative array data of single field.
 	 *
 	 * @return $this
 	 */
-	public function add_field( Field $field ) {
+	public function add_field( BaseField $field ) {
 		$this->fields[] = $this->normalize_field( $field );
 
 		return $this;
@@ -92,7 +92,7 @@ class Option {
 	/**
 	 * Set multiple fields at once.
 	 *
-	 * @param Field[] $fields Non associative list of field. Each item should be associative array of single field.
+	 * @param BaseField[] $fields Non associative list of field. Each item should be associative array of single field.
 	 *
 	 * @return $this
 	 */
@@ -106,9 +106,9 @@ class Option {
 	/**
 	 * Normalized fields.
 	 *
-	 * @param Field[] $fields List of fields to be normalized.
+	 * @param BaseField[] $fields List of fields to be normalized.
 	 *
-	 * @return Field[]|bool False in failure (e.g. empty list of fields). Normalized array of class fields.
+	 * @return BaseField[]|bool False in failure (e.g. empty list of fields). Normalized array of class fields.
 	 */
 	public function normalize_fields( $fields ) {
 
@@ -119,10 +119,10 @@ class Option {
 		$normalized_fields = [];
 
 		foreach ( $fields as $field ) {
-			if ( $fields instanceof Field ) {
+			if ( $fields instanceof BaseField ) {
 				$checked_field = $this->normalize_field( $field );
 
-				if ( $checked_field instanceof Field ) {
+				if ( $checked_field instanceof BaseField ) {
 					$normalized_fields[] = $checked_field;
 				}
 			}
@@ -134,11 +134,11 @@ class Option {
 	/**
 	 * Normalize field.
 	 *
-	 * @param Field $field
+	 * @param BaseField $field
 	 *
-	 * @return Field|false
+	 * @return BaseField|false
 	 */
-	public function normalize_field( Field $field ) {
+	public function normalize_field( BaseField $field ) {
 		$field_id = $field->get_id();
 
 		if ( empty( $field_id ) ) {
