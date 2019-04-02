@@ -204,7 +204,7 @@ class Section {
 	 * @return string
 	 */
 	public function __toString () {
-		return $this->run();
+		return $this->render();
 	}
 
 	/**
@@ -212,7 +212,7 @@ class Section {
 	 *
 	 * @return string
 	 */
-	public function run () {
+	public function render () {
 
 		if ( ! $this->is_visible() ) {
 			return '';
@@ -231,13 +231,20 @@ class Section {
 
 		$html .= $this->get_callback();
 
-		$fields = $this->get_fields();
+		$fields     = $this->get_fields();
+		$field_html = '';
 
 		if ( ! empty( $fields ) ) {
 			foreach ( $fields as $field ) {
-				$html .= $field;
+				$field_html .= $field;
 			}
 		}
+
+		$html .= <<<EOL
+<table class="form-table">
+	<tbody>$field_html</tbody>
+</table>
+EOL;
 
 		return str_replace( [ '{id}', '{content}' ], [ $this->get_id(), $html ], $this->wrapper );
 	}

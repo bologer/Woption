@@ -2,6 +2,8 @@
 
 namespace Woption;
 
+use Woption\Fields\BaseField;
+
 /**
  * Class AnyCommentOption is used to hold information regarding single section.
  *
@@ -39,7 +41,7 @@ class Option {
 	 *
 	 * @param array $options List of options.
 	 */
-	public function __construct( $options ) {
+	public function __construct ( $options ) {
 		$this->option_group = $options['option_group'];
 		$this->option_name  = $options['option_name'];
 		$this->page_slug    = $options['page_slug'];
@@ -52,7 +54,7 @@ class Option {
 	 *
 	 * @return $this
 	 */
-	public function add_section( $section ) {
+	public function add_section ( $section ) {
 		$this->sections[] = $this->normalize_section( $section );
 
 		return $this;
@@ -63,7 +65,7 @@ class Option {
 	 *
 	 * @return Section[]|null NULL in case when no section defined.
 	 */
-	public function get_sections() {
+	public function get_sections () {
 		return $this->sections;
 	}
 
@@ -72,7 +74,7 @@ class Option {
 	 *
 	 * @return BaseField[]
 	 */
-	public function get_fields() {
+	public function get_fields () {
 		return $this->fields;
 	}
 
@@ -83,7 +85,7 @@ class Option {
 	 *
 	 * @return $this
 	 */
-	public function add_field( BaseField $field ) {
+	public function add_field ( BaseField $field ) {
 		$this->fields[] = $this->normalize_field( $field );
 
 		return $this;
@@ -96,7 +98,7 @@ class Option {
 	 *
 	 * @return $this
 	 */
-	public function add_fields( $fields ) {
+	public function add_fields ( $fields ) {
 
 		$this->fields = $this->normalize_fields( $fields );
 
@@ -110,7 +112,7 @@ class Option {
 	 *
 	 * @return BaseField[]|bool False in failure (e.g. empty list of fields). Normalized array of class fields.
 	 */
-	public function normalize_fields( $fields ) {
+	public function normalize_fields ( $fields ) {
 
 		if ( empty( $fields ) ) {
 			return false;
@@ -138,7 +140,7 @@ class Option {
 	 *
 	 * @return BaseField|false
 	 */
-	public function normalize_field( BaseField $field ) {
+	public function normalize_field ( BaseField $field ) {
 		$field_id = $field->get_id();
 
 		if ( empty( $field_id ) ) {
@@ -155,7 +157,7 @@ class Option {
 	 *
 	 * @return Section|bool
 	 */
-	public function normalize_section( Section $section ) {
+	public function normalize_section ( Section $section ) {
 		if ( empty( $section ) ) {
 			return false;
 		}

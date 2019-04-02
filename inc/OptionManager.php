@@ -233,13 +233,15 @@ JS;
 		return new Section( $this->section_options );
 	}
 
+
 	/**
 	 * Renders and echoes options page.
 	 */
 	public function render () {
 		$html = '';
 
-		$options = $this->options;
+		$options      = $this->options;
+		$tabs_content = '';
 
 		$html .= '<div class="wrap">';
 
@@ -252,9 +254,21 @@ JS;
 			$sections = $option->get_sections();
 
 			if ( ! empty( $sections ) ) {
+
+				$tabs_content = '<h2 class="nav-tab-wrapper">';
+
 				foreach ( $sections as $section ) {
+					$section_title = $section->get_title();
+					$form_content  .= <<<EOL
+
+    <a href="#" class="nav-tab">$section_title</a>
+</h2>
+EOL;
+
 					$form_content .= $section;
 				}
+
+				$tabs_content .= '</h2>';
 			} else {
 				$fields = $option->get_fields();
 				foreach ( $fields as $field ) {
@@ -268,10 +282,9 @@ JS;
 		$html .= <<<EOL
 <form action="" id="{$this->get_page_slug()}" method="post" novalidate>
 	<input type="hidden" name="option_name" value="{$this->option_name}">
-			
-	<table class="form-table">
-		<tbody>$form_content</tbody>
-	</table>
+		
+	$tabs_content
+	$form_content
 	
 	<p class="submit">
 		<input type="submit" name="submit" id="submit" class="button button-primary" value="$save">

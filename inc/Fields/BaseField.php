@@ -2,6 +2,8 @@
 
 namespace Woption\Fields;
 
+use Woption\BaseHtml;
+
 /**
  * Class Field is used to hold information regarding single field item in the form.
  *
@@ -479,8 +481,15 @@ JS;
 		$html .= $label;
 		$html .= '</th>';
 
-		$html .= '<td>';
-		$html .= $this->render_field();
+		$html       .= '<td>';
+		$attributes = [
+			'class' => $this->wrapper_class . ' ' . ( $this->wrapper_class . '-' . $this->get_id() ),
+		];
+		$html       .= str_replace( [ '{content}', '{attributes}' ], [
+			$this->render_field(),
+			BaseHtml::renderTagAttributes( $attributes ),
+		], $this->wrapper );
+
 		$html .= $description;
 		$html .= '<td>';
 
@@ -490,16 +499,6 @@ JS;
 
 		$html .= '</tr>';
 
-		$attributes = [
-			'class' => $this->wrapper_class . ' ' . ( $this->wrapper_class . '-' . $this->get_id() ),
-		];
-
-		$rendered_attributes = '';
-		foreach ( $attributes as $name => $value ) {
-			$rendered_attributes .= "$name=\"$value\" ";
-		}
-		$rendered_attributes = trim( $rendered_attributes );
-
-		return str_replace( [ '{content}', '{attributes}' ], [ $html, $rendered_attributes ], $this->wrapper );
+		return $html;
 	}
 }

@@ -120,10 +120,10 @@ class BaseHtml {
 	 *
 	 * The "data" attribute is specially handled when it is receiving an array value. In this case,
 	 * the array will be "expanded" and a list data attributes will be rendered. For example,
-	 * if `'data' => ['id' => 1, 'name' => 'yii']`, then this will be rendered:
-	 * `data-id="1" data-name="yii"`.
-	 * Additionally `'data' => ['params' => ['id' => 1, 'name' => 'yii'], 'status' => 'ok']` will be rendered as:
-	 * `data-params='{"id":1,"name":"yii"}' data-status="ok"`.
+	 * if `'data' => ['id' => 1, 'name' => 'woption']`, then this will be rendered:
+	 * `data-id="1" data-name="woption"`.
+	 * Additionally `'data' => ['params' => ['id' => 1, 'name' => 'woption'], 'status' => 'ok']` will be rendered as:
+	 * `data-params='{"id":1,"name":"woption"}' data-status="ok"`.
 	 *
 	 * @param array $attributes attributes to be rendered. The attribute values will be HTML-encoded using [[encode()]].
 	 *
@@ -224,7 +224,6 @@ class BaseHtml {
 
 	/**
 	 * Encodes special characters into HTML entities.
-	 * The [[\yii\base\Application::charset|application charset]] will be used for encoding.
 	 *
 	 * @param string $content the content to be encoded
 	 * @param bool $doubleEncode whether to encode HTML entities in `$content`. If false,
@@ -235,6 +234,6 @@ class BaseHtml {
 	 * @see http://www.php.net/manual/en/function.htmlspecialchars.php
 	 */
 	public static function encode ( $content, $doubleEncode = true ) {
-		return htmlspecialchars( $content, ENT_QUOTES | ENT_SUBSTITUTE, Yii::$app ? Yii::$app->charset : 'UTF-8', $doubleEncode );
+		return htmlspecialchars( $content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode );
 	}
 }
