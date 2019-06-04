@@ -65,7 +65,7 @@ class OptionManager {
 	public $options = null;
 
 	/**
-	 * @var string Associative list of properties passed to field class.
+	 * @var array Associative list of properties passed to field class.
 	 * @see Section constructor for further information about passed options.
 	 */
 	protected $section_options = [];
@@ -92,10 +92,10 @@ class OptionManager {
 	 * Init class.
 	 */
 	public function init () {
-
 		add_action( 'admin_menu', [ $this, 'init_menu' ] );
+		add_action( 'admin_post_' . $this->option_name, [ $this, 'handle_form_request' ] );
 
-		$this->init_rest_api();
+		$this->handlers();
 	}
 
 	/**
@@ -124,78 +124,106 @@ class OptionManager {
 	}
 
 	/**
-	 * Initiate and register WP REST API and AJAX-related scripts.
+	 * Generic handlers.
 	 */
-	public function init_rest_api () {
-		$action_name = $this->get_page_slug();
+	public function handlers () {
+		$transient_key = $this->get_transient_key();
+		$transient     = get_transient( $transient_key );
 
-		add_action( 'rest_api_init', function () use ( $action_name ) {
-			register_rest_route( 'anycomment/v1', "/$action_name/", array(
-				'methods'  => 'POST',
-				'callback' => [ $this, 'process_rest' ],
-			) );
-		} );
-
-		add_action( 'admin_footer', function () use ( $action_name ) {
-			$form_id         = '#' . $this->get_page_slug();
-			$url             = rest_url( 'anycomment/v1/' . $action_name );
-			$success_message = __( "Settings saved", 'anycomment' );
-			$js              = <<<JS
-jQuery('$form_id').on('submit', function(e) {
-	e.preventDefault();
-	
-	var data = jQuery(this).serialize();
-	
-	if(!data) {
-	    return false;
-	}
-	
-	jQuery.ajax({
-	    method: 'POST',
-	    url: '$url',
-	    data: data,
-	    success: function(data) {
-	        if(data.success) {
-	            alert('$success_message');
-	        }
-	    },
-	    error: function(err) {
-	        console.log(err);
-	    }
-	});
-});
-JS;
-			echo '<script>' . $js . '</script>';
-		} );
+		if ( ! empty( $transient ) ) {
+			$transient = (array) $transient;
+			$type      = (string) $transient['type'];
+			$message   = (string) $transient['message'];
+			delete_transient( $transient_key );
+			add_action( 'admin_notices', function () use ( $type, $message ) {
+				?>
+                <div class="notice notice-<?php echo $type ?> is-dismissible">
+                    <p><?php esc_html_e( $message ) ?></p>
+                </div>
+				<?php
+			} );
+		}
 	}
 
 	/**
-	 * Process REST request to save the form.
-	 *
-	 * @param \WP_REST_Request $request
-	 *
-	 * @return mixed|\WP_Error|\WP_REST_Response
+	 * Handle form request.
 	 */
-	public function process_rest ( $request ) {
+	public function handle_form_request () {
 
-		$response = new \WP_REST_Response();
+		$transient_key = $this->get_transient_key();
 
-		if ( ! isset( $request['option_name'] ) ) {
-			return new \WP_Error( 403, __( 'Option name is required', 'anycomment' ), [ 'status' => 403 ] );
+		$save_form = $this->save_form();
+
+		if ( ! ( $save_form instanceof \WP_Error ) ) {
+			set_transient( $transient_key, [
+				'type'    => 'success',
+				'message' => 'Saved successfully',
+			], 60 );
+		} else {
+			set_transient( $transient_key, [
+				'type'    => 'error',
+				'message' => $save_form->get_error_message(),
+			], 60 );
+		}
+		wp_redirect( isset( $_POST['redirect'] ) ? $_POST['redirect'] : '/' );
+		exit();
+	}
+
+	/**
+	 * Get transient key.
+	 *
+	 * @return string
+	 */
+	public function get_transient_key () {
+		return $this->option_name . get_current_user_id();
+	}
+
+
+	/**
+	 * Process form submission.
+	 *
+	 * @return mixed|\WP_Error
+	 */
+	public function save_form () {
+		if ( ! wp_verify_nonce( $_POST['nonce'], $this->option_name ) ) {
+			return new \WP_Error( '', 'Invalid nonce' );
 		}
 
-		$option_name = trim( $request['option_name'] );
+		$options = $_POST;
 
-		$options = $request->get_params();
-		unset( $options['option_name'] );
+		unset( $options['redirect'] );
+		unset( $options['nonce'] );
 
-		$this->update_db_option( $options, $option_name );
+		// Removes issue when e.g. ' were changed to \' and after a few saves it was already \\ and so on
+		$options = array_map( 'stripslashes_deep', $options );
 
-		$response->set_data( [
-			'success' => true,
-		] );
+		$opt = $this->get_options();
 
-		return rest_ensure_response( $response );
+		/**
+		 * @var $option Option
+		 */
+		foreach ( $opt as $option ) {
+			$sections = $option->get_sections();
+
+			if ( ! empty( $sections ) ) {
+				foreach ( $sections as $section ) {
+					$batch_insert = [];
+					foreach ( $section->get_fields() as $field ) {
+						$field_name = $field->get_id();
+						if ( isset( $options[ $field_name ] ) ) {
+							$batch_insert[ $field_name ] = $options[ $field_name ];
+							unset( $options[ $field_name ] );
+						}
+					}
+
+					$this->update_db_option( $batch_insert, $section->get_id() );
+				}
+			} else {
+				$this->update_db_option( $options, $this->option_name );
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -238,59 +266,51 @@ JS;
 	 * Renders and echoes options page.
 	 */
 	public function render () {
-		$html = '';
+		$html = '<div class="wrap">';
 
-		$options      = $this->options;
-		$tabs_content = '';
+		$options = $this->options;
+		$html    .= '<form action="' . esc_url( admin_url( "admin-post.php" ) ) . '" id="' . $this->get_page_slug() . '" method="post" novalidate>';
 
-		$html .= '<div class="wrap">';
+		$redirect_url = isset( $_SERVER['REQUEST_URI'] ) ? esc_url( $_SERVER['REQUEST_URI'] ) : '';
 
-		if ( ! empty( $this->page_title ) ) {
-			$html .= '<h1>' . $this->page_title . '</h1>';
-		}
+		$html .= '<input type="hidden" name="redirect" value="' . $redirect_url . '">';
+		$html .= '<input type="hidden" name="action" value="' . $this->option_name . '">';
+		$html .= '<input type="hidden" name="nonce" value="' . wp_create_nonce( $this->option_name ) . '" />';
 
-		$form_content = '';
 		foreach ( $options as $option ) {
 			$sections = $option->get_sections();
-
 			if ( ! empty( $sections ) ) {
 
-				$tabs_content = '<h2 class="nav-tab-wrapper">';
+
+				$section_tabs     = [];
+				$section_contents = [];
 
 				foreach ( $sections as $section ) {
-					$section_title = $section->get_title();
-					$form_content  .= <<<EOL
+					$section_url = esc_url( admin_url( 'admin.php?page=' . $this->get_page_slug() . '&tab=' . $section->get_id() ) );
 
-    <a href="#" class="nav-tab">$section_title</a>
-</h2>
-EOL;
+					$section_tabs[] = '<a href="' . $section_url . '" class="nav-tab">' . $section->get_title() . '</a>';
 
-					$form_content .= $section;
+					if ( isset( $_GET['tab'] ) && $_GET['tab'] === $section->get_id() ) {
+						$section_contents[] = $section;
+					}
 				}
 
-				$tabs_content .= '</h2>';
+				$html .= '<h2 class="nav-tab-wrapper">';
+				$html .= implode( "\n", $section_tabs );
+				$html .= '</h2>';
+
+				$html .= implode( "\n", $section_contents );
+
+
 			} else {
 				$fields = $option->get_fields();
 				foreach ( $fields as $field ) {
-					$form_content .= $field;
+					$html .= $field;
 				}
 			}
 		}
-
-		$save = 'Save';
-
-		$html .= <<<EOL
-<form action="" id="{$this->get_page_slug()}" method="post" novalidate>
-	<input type="hidden" name="option_name" value="{$this->option_name}">
-		
-	$tabs_content
-	$form_content
-	
-	<p class="submit">
-		<input type="submit" name="submit" id="submit" class="button button-primary" value="$save">
-	</p>
-</form>	
-EOL;
+		$html .= '<input type="submit" class="button" value="Save">';
+		$html .= '</form>';
 
 		$html .= '</div>';
 
@@ -303,7 +323,7 @@ EOL;
 	 * @return mixed
 	 */
 	public function get_page_slug () {
-		return str_replace( '-', '_', $this->page_slug );
+		return $this->page_slug;
 	}
 
 	/**

@@ -156,6 +156,11 @@ class Section {
 	 * @return $this
 	 */
 	public function set_fields ( $fields ) {
+
+		foreach ( $fields as $field ) {
+			$field->set_option_name( $this->get_id() );
+		}
+
 		$this->fields = $fields;
 
 		return $this;
@@ -220,10 +225,7 @@ class Section {
 
 		$html = '';
 
-		$title       = $this->get_title();
 		$description = $this->get_description();
-
-		$html .= '<h2>' . $title . '</h2>';
 
 		if ( ! empty( $description ) ) {
 			$html .= '<p>' . $description . '</p>';

@@ -311,6 +311,15 @@ abstract class BaseField {
 	}
 
 	/**
+	 * Set option name.
+	 *
+	 * @param string|null $option_name
+	 */
+	public function set_option_name ( $option_name ) {
+		$this->option_name = $option_name;
+	}
+
+	/**
 	 * Get field value is was previously set.
 	 *
 	 * @return null|string
