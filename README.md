@@ -5,7 +5,10 @@ Woption (_WordPress Option_) is free & lightweight framework to manage options i
 
 ## Get started
 
-If you like to start using the framework, you need to clone repository and enable autoloading via Compose.
+If you like to start using the framework, you need to:
+
+- Clone repository
+- Enable autoloader via Composer
 
 > `composer` command used below assumes you have install Compose globally.
 
@@ -39,6 +42,10 @@ class My_Plugin extends \Woption\OptionManager {
 ```
 
 Happy coding!
+
+## Example Projects 
+
+Here is [demo plugin](https://github.com/bologer/Woption-Examples) built with Woption.
 
 ## Documentation
 
