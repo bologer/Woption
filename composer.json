@@ -1,0 +1,17 @@
+{
+    "name": "bologer/woption",
+    "description": "Woption is a micro framework to manage options built specifically for WordPress.",
+    "type": "project",
+    "license": "LGPL-2.1",
+    "authors": [
+        {
+            "name": "Alexander Teshabaev",
+            "email": "sasha.tesh@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {},
+    "autoload": {
+        "psr-4": {"Woption\\": "src/"}
+    }
+}

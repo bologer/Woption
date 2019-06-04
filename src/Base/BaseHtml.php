@@ -1,6 +1,6 @@
 <?php
 
-namespace Woption;
+namespace Woption\Base;
 
 /**
  * Class BaseHtml is base HTML helper class.

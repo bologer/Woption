@@ -2,7 +2,7 @@
 
 namespace Woption\Fields;
 
-use Woption\BaseHtml;
+use Woption\Base\BaseHtml;
 
 /**
  * Class Field is used to hold information regarding single field item in the form.
